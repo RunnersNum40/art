@@ -6,32 +6,32 @@ from sklearn.neighbors import NearestNeighbors
 import colour
 
 
-def rgb_to_oklab(image: np.ndarray) -> np.ndarray:
+def rgb_to_lab(image: np.ndarray) -> np.ndarray:
     """
-    Convert an RGB image to OKLab color space.
+    Convert an RGB image to Lab color space.
 
     Args:
     - image: Numpy array representing the image in the RGB color space.
 
     Returns:
-    - Numpy array representing the image in the OKLab color space.
+    - Numpy array representing the image in the Lab color space.
     """
     image = colour.RGB_to_XYZ(image, colourspace="sRGB")
-    image = colour.XYZ_to_Oklab(image)
+    image = colour.XYZ_to_Lab(image)
     return image
 
 
-def oklab_to_rgb(image: np.ndarray) -> np.ndarray:
+def lab_to_rgb(image: np.ndarray) -> np.ndarray:
     """
-    Convert an OKLab image array back to RGB color space.
+    Convert an Lab image array back to RGB color space.
 
     Args:
-    - image: Numpy array representing the image in the OKLab color space.
+    - image: Numpy array representing the image in the Lab color space.
 
     Returns:
     - Numpy array representing the image in the RGB color space.
     """
-    image = colour.Oklab_to_XYZ(image)
+    image = colour.Lab_to_XYZ(image)
     image = colour.XYZ_to_RGB(image, colourspace="sRGB")
     return image
 
@@ -54,7 +54,7 @@ def cluster_image(
     Returns:
     - Tuple of the image shape, the fitted KMeans cluster centers (including their original positions), and their pixel positions.
     """
-    oklab = rgb_to_oklab(np.array(image))
+    oklab = rgb_to_lab(np.array(image))
     original_shape = oklab.shape
     pixels = oklab.reshape(-1, 3)
     xy = np.indices(dimensions=(original_shape[0], original_shape[1])).reshape(2, -1).T
@@ -108,7 +108,7 @@ def create_image_from_position_clusters(
 
     # Reconstruct the image
     new_image_array = closest_centroid_colors.reshape(generation_shape[:2] + (3,))
-    new_image = Image.fromarray(oklab_to_rgb(new_image_array).astype(np.uint8))
+    new_image = Image.fromarray(lab_to_rgb(new_image_array).astype(np.uint8))
 
     return new_image.resize(shape, Image.BICUBIC)
 
@@ -141,14 +141,10 @@ def segment_image(
 
 
 if __name__ == "__main__":
-    image_path = "../images/originals/portal2.jpg"
-    save_path = "../images/processed/portal2.png"
+    image_path = "../examples/k_means_voronoi/landscape.jpg"
     image = Image.open(image_path)
-    n_clusters = 128 * 8
 
-    # Segment the image
-    segmented_image = segment_image(image, n_clusters)
-
-    # Save and show the segmented image
-    segmented_image.save(save_path)
-    segmented_image.show()
+    for n_clusters in [16, 128, 512, 2048]:
+        save_path = f"../examples/k_means_voronoi/segmented_{n_clusters}_landscape.jpg"
+        segmented_image = segment_image(image, n_clusters)
+        segmented_image.save(save_path)
